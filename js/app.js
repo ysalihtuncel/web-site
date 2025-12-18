@@ -149,49 +149,394 @@ function closeTab(fileId) {
   }
 }
 
-// Kullanıcı bilgilerini güncelleme fonksiyonu
-function updateUserInfo(info) {
-  // Profil bilgileri
+/* =========================
+   CONFIG RENDERING
+========================= */
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function nbsp(count) {
+  return "&nbsp;".repeat(count);
+}
+
+function line(html) {
+  return html + "<br>";
+}
+
+function kw(t) {
+  return `<span class="keyword">${escHtml(t)}</span>`;
+}
+function cl(t) {
+  return `<span class="class-name">${escHtml(t)}</span>`;
+}
+function fn(t) {
+  return `<span class="function">${escHtml(t)}</span>`;
+}
+function st(t) {
+  return `<span class="string">"${escHtml(t)}"</span>`;
+}
+function cm(t) {
+  return `<span class="comment">${escHtml(t)}</span>`;
+}
+function nb(n) {
+  return `<span class="number">${escHtml(n)}</span>`;
+}
+function vr(t) {
+  return `<span class="variable">${escHtml(t)}</span>`;
+}
+
+function applyConfigToSidebar(config) {
+  if (!config) return;
+
+  const p = config.profile || {};
   const profileName = document.getElementById("profileName");
   const profileTitle = document.getElementById("profileTitle");
   const profileLocation = document.getElementById("profileLocation");
+  const profileImage = document.getElementById("profileImage");
 
-  if (profileName) profileName.textContent = `${info.name} ${info.surname}`;
-  if (profileTitle) profileTitle.textContent = info.title;
-  if (profileLocation) profileLocation.textContent = info.location;
+  if (profileName) profileName.textContent = `${p.firstName || ""} ${p.lastName || ""}`.trim();
+  if (profileTitle) profileTitle.textContent = p.title || "";
+  if (profileLocation) profileLocation.textContent = p.location || "";
+  if (profileImage && p.profileImage) profileImage.src = p.profileImage;
 
-  // Me.cs içeriğini güncelle
-  const meContent = document.getElementById("me-content");
-  if (meContent) {
-    meContent.innerHTML = meContent.innerHTML
-      .replace(/Adınız/g, info.name)
-      .replace(/Soyadınız/g, info.surname)
-      .replace(/Unity Game Developer/g, info.title)
-      .replace(/ExperienceYears = 3/g, `ExperienceYears = ${info.experienceYears}`)
-      .replace(/İstanbul, Türkiye/g, info.location);
-  }
-
-  // Contact.cs içeriğini güncelle
-  const contactContent = document.getElementById("contact-content");
-  if (contactContent) {
-    contactContent.innerHTML = contactContent.innerHTML
-      .replace(/email@adresiniz\.com/g, info.email)
-      .replace(/\+90 5XX XXX XX XX/g, info.phone)
-      .replace(/linkedin\.com\/in\/kullaniciadi/g, info.linkedin)
-      .replace(/github\.com\/kullaniciadi/g, info.github)
-      .replace(/portfolioadresiniz\.com/g, "");
-  }
-
-  // Sosyal medya linklerini güncelle
+  const social = p.social || {};
   const githubLink = document.getElementById("githubLink");
   const linkedinLink = document.getElementById("linkedinLink");
   const youtubeLink = document.getElementById("youtubeLink");
 
-  if (githubLink) githubLink.href = `https://${info.github}`;
-  if (linkedinLink) linkedinLink.href = `https://${info.linkedin}`;
-  if (youtubeLink) youtubeLink.href = `https://${info.youtube}`;
+  if (githubLink && social.github) githubLink.href = social.github;
+  if (linkedinLink && social.linkedin) linkedinLink.href = social.linkedin;
+  if (youtubeLink && social.youtube) youtubeLink.href = social.youtube;
+}
 
-  // Line numbers'ı yeniden oluştur
+function renderMe(config) {
+  const p = config.profile || {};
+  const ind = (n) => nbsp(n * 4);
+
+  let html = "";
+
+  html += line(`${kw("using")} UnityEngine;`);
+  html += line("");
+  html += line(`${kw("namespace")} ${cl("MyCV")}`);
+  html += line("{");
+  html += line(`${ind(1)}[${cl("CreateAssetMenu")}(menuName = ${st("MyCV/Profile")}, fileName = ${st("Profile")})]`);
+  html += line(`${ind(1)}${kw("public class")} ${cl("ProfileAsset")} : ${cl("ScriptableObject")}`);
+  html += line(`${ind(1)}{`);
+  html += line(`${ind(2)}${kw("public string")} firstName = ${st(p.firstName || "")};`);
+  html += line(`${ind(2)}${kw("public string")} lastName = ${st(p.lastName || "")};`);
+  html += line(`${ind(2)}${kw("public string")} title = ${st(p.title || "")};`);
+  html += line(`${ind(2)}[${cl("Min")}(0)] ${kw("public int")} experienceYears = ${nb(p.experienceYears ?? 0)};`);
+  html += line(`${ind(2)}${kw("public string")} location = ${st(p.location || "")};`);
+  html += line(`${ind(2)}[${cl("Min")}(0)] ${kw("public int")} projectCount = ${nb(p.projectCount ?? 0)};`);
+  html += line(`${ind(1)}}`);
+  html += line("");
+  html += line("");
+  html += line(`${ind(1)}${kw("public class")} ${cl("ProfilePresenter")} : ${cl("MonoBehaviour")}`);
+  html += line(`${ind(1)}{`);
+  html += line(`${ind(2)}[${cl("SerializeField")}] ${kw("private")} ${cl("ProfileAsset")} profile;`);
+  html += line("");
+  html += line(`${ind(2)}${kw("private void")} ${fn("Start")}()`);
+  html += line(`${ind(2)}{`);
+  html += line(`${ind(3)}${kw("if")} (profile == ${kw("null")})`);
+  html += line(`${ind(3)}{`);
+  html += line(`${ind(4)}${cl("Debug")}.LogError(${st("ProfileAsset atanmadı.")});`);
+  html += line(`${ind(4)}${kw("return")};`);
+  html += line(`${ind(3)}}`);
+  html += line("");
+  html += line(`${ind(3)}${cl("Debug")}.Log(${st("🚀 CV başlatılıyor...")});`);
+  html += line(`${ind(3)}${cl("Debug")}.Log($${st("👋 Merhaba! Ben {profile.firstName} {profile.lastName}")});`.replace('$"', '"$'));
+  html += line(`${ind(3)}${cl("Debug")}.Log($${st("🎮 Unity ile {profile.experienceYears} yıldır oyun geliştiriyorum.")});`.replace('$"', '"$'));
+  html += line(`${ind(3)}${cl("Debug")}.Log($${st("📍 Konum: {profile.location}")});`.replace('$"', '"$'));
+  html += line(`${ind(3)}${cl("Debug")}.Log(${st("💻 Uzmanlık: C#, 2D/3D, oyun mekaniği, tasarım desenleri.")});`);
+  html += line(`${ind(3)}${cl("Debug")}.Log($${st("🌟 {profile.projectCount}+ projede yer aldım.")});`.replace('$"', '"$'));
+  html += line(`${ind(2)}}`);
+  html += line(`${ind(1)}}`);
+  html += line("}");
+  html += `<span class="cursor"></span>`;
+
+  return html;
+}
+
+function renderSkills(config) {
+  const s = config.skills || { technical: [], soft: [] };
+  const ind = (n) => nbsp(n * 4);
+
+  const formatArrayInline = (arr) => {
+    const groups = [];
+    let i = 0;
+    const pattern = [3, 2, 2];
+    let pi = 0;
+
+    while (i < arr.length) {
+      const take = pattern[Math.min(pi, pattern.length - 1)];
+      groups.push(arr.slice(i, i + take));
+      i += take;
+      pi++;
+    }
+
+    return (
+      groups
+        .map((g) => `${ind(3)}${g.map((x) => st(x)).join(", ")}${g.length ? "," : ""}`)
+        .join("<br>") + "<br>"
+    );
+  };
+
+  let html = "";
+  html += line(`${kw("using")} System.Collections.Generic;`);
+  html += line("");
+  html += line(`${kw("namespace")} ${cl("MyCV")}`);
+  html += line("{");
+  html += line(`${ind(1)}${kw("public static class")} ${cl("Skills")}`);
+  html += line(`${ind(1)}{`);
+  html += line(`${ind(2)}${kw("private static readonly string")}[] _technical =`);
+  html += line(`${ind(2)}{`);
+  html += formatArrayInline(s.technical);
+  html += line(`${ind(2)}};`);
+  html += line("");
+  html += line(`${ind(2)}${kw("private static readonly string")}[] _soft =`);
+  html += line(`${ind(2)}{`);
+  html += formatArrayInline(s.soft);
+  html += line(`${ind(2)}};`);
+  html += line("");
+  html += line(`${ind(2)}${kw("public static")} ${cl("IReadOnlyList")}&lt;${kw("string")}&gt; Technical =&gt; _technical;`);
+  html += line(`${ind(2)}${kw("public static")} ${cl("IReadOnlyList")}&lt;${kw("string")}&gt; Soft =&gt; _soft;`);
+  html += line(`${ind(1)}}`);
+  html += line("}");
+  html += `<span class="cursor"></span>`;
+  return html;
+}
+
+function renderExperience(config) {
+  const jobs = config.experience || [];
+  const ind = (n) => nbsp(n * 4);
+
+  const joinInlineStrings = (arr) => (arr || []).map((x) => st(x)).join(", ");
+
+  const renderResponsibilitiesBlock = (arr) => {
+    const list = arr || [];
+    if (list.length === 0) return "";
+    return list.map((x) => `${ind(5)}${st(x)}`).join("<br>") + "<br>";
+  };
+
+  const toYearMonthParse = (yyyyMm) => `YearMonth.Parse(${st(yyyyMm || "")})`;
+
+  const renderJob = (j, isLast) => {
+    const endExpr = j.end ? toYearMonthParse(j.end) : kw("null");
+
+    let html = "";
+    html += line(`${ind(3)}new ${cl("Job")}(`);
+    html += line(`${ind(4)}Company: ${st(j.company)},`);
+    html += line(`${ind(4)}Position: ${st(j.position)},`);
+    html += line(`${ind(4)}Start: ${toYearMonthParse(j.start)},`);
+    html += line(`${ind(4)}End: ${endExpr},`);
+    html += line(`${ind(4)}Technologies: new[] { ${joinInlineStrings(j.technologies)} },`);
+    html += line(`${ind(4)}Responsibilities: new[]`);
+    html += line(`${ind(4)}{`);
+    html += renderResponsibilitiesBlock(j.responsibilities);
+    html += line(`${ind(4)}}`);
+    html += line(`${ind(3)})${isLast ? "" : ","}`);
+    return html;
+  };
+
+  let html = "";
+  html += line(`${kw("using")} System;`);
+  html += line(`${kw("using")} System.Collections.Generic;`);
+  html += line(`${kw("using")} System.Globalization;`);
+  html += line("");
+  html += line(`${kw("namespace")} ${cl("MyCV")}`);
+  html += line("{");
+  html += line(`${ind(1)}${kw("public readonly record struct")} ${cl("YearMonth")}(int Year, int Month)`);
+  html += line(`${ind(1)}{`);
+  html += line(`${ind(2)}${kw("public override string")} ${fn("ToString")}() =&gt; ${st("{Year:D4}-{Month:D2}")};`);
+  html += line("");
+  html += line(`${ind(2)}${kw("public static")} ${cl("YearMonth")} ${fn("Parse")}(string yyyyMm)`);
+  html += line(`${ind(2)}{`);
+  html += line(`${ind(3)}${kw("var")} dt = ${cl("DateTime")}.ParseExact(yyyyMm, ${st("yyyy-MM")}, ${cl("CultureInfo")}.InvariantCulture);`);
+  html += line(`${ind(3)}${kw("return new")} ${cl("YearMonth")}(dt.Year, dt.Month);`);
+  html += line(`${ind(2)}}`);
+  html += line(`${ind(1)}}`);
+  html += line("");
+  html += line(`${ind(1)}${kw("public sealed record")} ${cl("Job")}(`);
+  html += line(`${ind(2)}string Company,`);
+  html += line(`${ind(2)}string Position,`);
+  html += line(`${ind(2)}${cl("YearMonth")} Start,`);
+  html += line(`${ind(2)}${cl("YearMonth")}? End, ${cm("// null =&gt; Present")}`);
+  html += line(`${ind(2)}${cl("IReadOnlyList")}&lt;string&gt; Technologies,`);
+  html += line(`${ind(2)}${cl("IReadOnlyList")}&lt;string&gt; Responsibilities`);
+  html += line(`${ind(1)})`);
+  html += line(`${ind(1)}{`);
+  html += line(`${ind(2)}${kw("public string")} PeriodText =&gt; End ${kw("is")} ${kw("null")} ? ${st("{Start} - Present")} : ${st("{Start} - {End}")};`);
+  html += line(`${ind(1)}}`);
+  html += line("");
+  html += line(`${ind(1)}${kw("public static class")} ${cl("ExperienceData")}`);
+  html += line(`${ind(1)}{`);
+  html += line(`${ind(2)}${kw("public static readonly")} ${cl("IReadOnlyList")}&lt;${cl("Job")}&gt; WorkHistory = ${cl("Array")}.AsReadOnly(new[]`);
+  html += line(`${ind(2)}{`);
+
+  jobs.forEach((j, i) => {
+    html += line("");
+    html += renderJob(j, i === jobs.length - 1);
+  });
+
+  html += line(`${ind(2)}});`);
+  html += line(`${ind(1)}}`);
+  html += line("}");
+  html += `<span class="cursor"></span>`;
+  return html;
+}
+
+function renderProjects(config) {
+  const projects = config.projects || [];
+  const ind = (n) => nbsp(n * 4);
+
+  const linkValue = (label, url) => {
+    if (!url) return st("");
+
+    const safeUrl = escHtml(url);
+    const safeLabel = escHtml(label || url);
+
+    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeLabel}</a>`;
+  };
+
+  const genreExpr = (g) => `${cl("ProjectGenre")}.${escHtml(g || "")}`;
+  const platformExpr = (p) => `${cl("Platform")}.${escHtml(p || "")}`;
+
+  const joinInlineStrings = (arr) => (arr || []).map((x) => st(x)).join(", ");
+
+  const renderProjectFactoryCall = (p, isLast) => {
+    let html = "";
+    html += line(`${ind(4)}${cl("ProjectFactory")}.${fn("Create")}(`);
+    html += line(`${ind(5)}name: ${st(p.name)},`);
+    html += line(`${ind(5)}genre: ${genreExpr(p.genre)},`);
+    html += line(`${ind(5)}platform: ${platformExpr(p.platform)},`);
+    html += line(`${ind(5)}yyyyMm: ${st(p.date)},`);
+    html += line(`${ind(5)}description: ${st(p.description)},`);
+    html += line(`${ind(5)}technologies: new[] { ${joinInlineStrings(p.technologies)} },`);
+    html += `${ind(5)}linkUrl: ${linkValue(p.linkLabel, p.linkUrl)}<br>`;
+    html += line(`${ind(4)})${isLast ? "" : ","}`);
+    return html;
+  };
+
+  let html = "";
+  html += line(`${kw("using")} System;`);
+  html += line("");
+  html += line(`${kw("namespace")} ${cl("MyCV")}`);
+  html += line("{");
+  html += line(`${ind(1)}${kw("public static class")} ${cl("ProjectCatalog")}`);
+  html += line(`${ind(1)}{`);
+  html += line(`${ind(2)}${kw("public static readonly")} System.Collections.Generic.${cl("IReadOnlyList")}&lt;${cl("Project")}&gt; Portfolio =`);
+  html += line(`${ind(3)}${cl("Array")}.AsReadOnly(new[]`);
+  html += line(`${ind(3)}{`);
+
+  projects.forEach((p, i) => {
+    html += line("");
+    html += renderProjectFactoryCall(p, i === projects.length - 1);
+  });
+
+  html += line(`${ind(3)}});`);
+  html += line(`${ind(1)}}`);
+  html += line("}");
+  html += `<span class="cursor"></span>`;
+  return html;
+}
+
+function renderEducation(config) {
+  const list = config.education || [];
+  const ind = (n) => nbsp(n * 4);
+
+  let html = "";
+
+  html += line(`${kw("using")} UnityEngine;`);
+  html += line("");
+  html += line(`${kw("namespace")} ${cl("MyCV")}`);
+  html += line("{");
+  html += line(`${ind(1)}${kw("public class")} ${cl("Education")} : ${cl("MonoBehaviour")}`);
+  html += line(`${ind(1)}{`);
+  html += line(`${ind(2)}[${cl("Serializable")}]`);
+  html += line(`${ind(2)}${kw("public struct")} ${cl("EducationRecord")}`);
+  html += line(`${ind(2)}{`);
+  html += line(`${ind(3)}${kw("public string")} Institution;`);
+  html += line(`${ind(3)}${kw("public string")} Degree;`);
+  html += line(`${ind(3)}${kw("public string")} Field;`);
+  html += line(`${ind(3)}${kw("public string")} Period;`);
+  html += line(`${ind(2)}}`);
+  html += line("");
+  html += line(`${ind(2)}${kw("public")} ${cl("EducationRecord")}[] EducationHistory =`);
+  html += line(`${ind(2)}{`);
+
+  list.forEach((e, idx) => {
+    html += line(`${ind(3)}${kw("new")} ${cl("EducationRecord")}`);
+    html += line(`${ind(3)}{`);
+    html += line(`${ind(4)}Institution = ${st(e.institution || "")},`);
+    html += line(`${ind(4)}Degree = ${st(e.degree || "")},`);
+    html += line(`${ind(4)}Field = ${st(e.field || "")},`);
+    html += line(`${ind(4)}Period = ${st(e.period || "")}`);
+    html += line(`${ind(3)}}${idx === list.length - 1 ? "" : ","}`);
+  });
+
+  html += line(`${ind(2)}};`);
+  html += line(`${ind(1)}}`);
+  html += line("}");
+  html += `<span class="cursor"></span>`;
+
+  return html;
+}
+
+
+function renderContact(config) {
+  const c = config.contact || {};
+  const ind = (n) => nbsp(n * 4);
+
+  let html = "";
+
+  html += line(`${kw("using")} UnityEngine;`);
+  html += line("");
+  html += line(`${kw("namespace")} ${cl("MyCV")}`);
+  html += line("{");
+  html += line(`${ind(1)}${kw("public static class")} ${cl("Contact")}`);
+  html += line(`${ind(1)}{`);
+  html += line(`${ind(2)}${kw("public const string")} Email = ${st(c.email || "")};`);
+  html += line(`${ind(2)}${kw("public const string")} Phone = ${st(c.phone || "")};`);
+  html += line(`${ind(2)}${kw("public const string")} LinkedInUrl = ${st(c.linkedin || "")};`);
+  html += line(`${ind(2)}${kw("public const string")} GitHubUrl = ${st(c.github || "")};`);
+  html += line("");
+  html += line(`${ind(2)}${kw("public static void")} ${fn("LogMessage")}(${kw("string")} senderName, ${kw("string")} message)`);
+  html += line(`${ind(2)}{`);
+  html += line(`${ind(3)}${cl("Debug")}.Log(${st("[Contact] From: ")} + senderName);`);
+  html += line(`${ind(3)}${cl("Debug")}.Log(message);`);
+  html += line(`${ind(2)}}`);
+  html += line("");
+  html += line(`${ind(2)}${kw("public static void")} ${fn("OpenEmail")}()`);
+  html += line(`${ind(2)}{`);
+  html += line(`${ind(3)}${cl("Application")}.OpenURL(${st("mailto:")} + Email);`);
+  html += line(`${ind(2)}}`);
+  html += line(`${ind(1)}}`);
+  html += line("}");
+  html += `<span class="cursor"></span>`;
+
+  return html;
+}
+
+function renderAllTabs(config) {
+  const map = {
+    "me-content": renderMe,
+    "skills-content": renderSkills,
+    "experience-content": renderExperience,
+    "projects-content": renderProjects,
+    "education-content": renderEducation,
+    "contact-content": renderContact,
+  };
+
+  Object.keys(map).forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = map[id](config);
+  });
+
   setTimeout(generateLineNumbers, 10);
 }
 
@@ -205,24 +550,33 @@ document.addEventListener("DOMContentLoaded", function () {
   const sidebar = document.getElementById("sidebar");
   const sidebarOverlay = document.getElementById("sidebarOverlay");
 
+  // ✅ HAMBURGER FIX: pointerdown + click + stopImmediatePropagation
   if (mobileToggle && sidebar && sidebarOverlay) {
-    mobileToggle.addEventListener("click", function (e) {
-      e.stopPropagation();
-      sidebar.classList.toggle("active");
-      sidebarOverlay.classList.toggle("active");
-      mobileToggle.innerHTML = sidebar.classList.contains("active")
+    const toggleSidebar = (e) => {
+      e.preventDefault?.();
+      e.stopPropagation?.();
+      e.stopImmediatePropagation?.();
+
+      const isOpen = sidebar.classList.toggle("active");
+      sidebarOverlay.classList.toggle("active", isOpen);
+
+      mobileToggle.innerHTML = isOpen
         ? '<i class="fas fa-times"></i>'
         : '<i class="fas fa-bars"></i>';
-    });
+    };
 
-    // Overlay'e tıklayınca menüyü kapat
+    // Mobil tarayıcılarda en sağlamı pointerdown
+    mobileToggle.addEventListener("click", toggleSidebar, { passive: false });
+    mobileToggle.addEventListener("click", toggleSidebar);
+
+    // Overlay'e dokununca kapat
     sidebarOverlay.addEventListener("click", function () {
       sidebar.classList.remove("active");
       sidebarOverlay.classList.remove("active");
       mobileToggle.innerHTML = '<i class="fas fa-bars"></i>';
     });
 
-    // Sayfa dışına tıklayınca mobil menüyü kapat
+    // Sayfa dışına dokununca kapat
     document.addEventListener("click", function (event) {
       if (window.innerWidth <= 768) {
         if (!sidebar.contains(event.target) && !mobileToggle.contains(event.target)) {
@@ -259,7 +613,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const fileId = this.getAttribute("data-file");
 
-      // Yeni dosyalar için badge ekle
+      // Yeni dosyalar için badge ekle (istersen kaldır)
       if (fileId === "me") {
         const badge = document.createElement("span");
         badge.className = "file-status";
@@ -279,7 +633,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // ✅ FIX: TAB BAR (mevcut + sonradan eklenen) için tek handler
+  // TAB BAR (mevcut + sonradan eklenen) için tek handler
   const tabsContainer = document.querySelector(".editor-tabs");
   if (tabsContainer) {
     tabsContainer.addEventListener("click", function (e) {
@@ -308,39 +662,13 @@ document.addEventListener("DOMContentLoaded", function () {
   // Saati her dakika güncelle
   setInterval(updateTime, 60000);
 
-  // Kullanıcı bilgilerini güncelle (buraya kendi bilgilerini yaz)
-  updateUserInfo({
-    name: "Yusuf Salih",
-    surname: "TUNÇEL",
-    title: "Unity Developer",
-    location: "Bursa-Osmangazi, Türkiye",
-    experienceYears: 5,
-    email: "saliht94@gmail.com",
-    phone: "+90 505 400 21 30",
-    linkedin: "linkedin.com/in/nadaked",
-    github: "github.com/ysalihtuncel",
-    youtube: "youtube.com/salihtuncel",
-    portfolio: "yusufsalihtuncel.com",
-  });
+  // CONFIG: js/config.js
+  const config = window.CV_CONFIG;
+  if (config) {
+    applyConfigToSidebar(config);
+    renderAllTabs(config);
+  }
 
-  // Örnek kullanıcı bilgileri (kendi bilgilerinle değiştir)
-  const sampleUserInfo = {
-    name: "Yusuf Salih",
-    surname: "TUNÇEL",
-    title: "Unity Developer",
-    location: "Bursa-Osmangazi, Türkiye",
-    experienceYears: 5,
-    email: "saliht94@gmail.com",
-    phone: "+90 505 400 21 30",
-    linkedin: "linkedin.com/in/nadaked",
-    github: "github.com/ysalihtuncel",
-    youtube: "youtube.com/salihtuncel",
-    portfolio: "yusufsalihtuncel.com",
-  };
-
-  // Sayfa yüklendiğinde örnek bilgileri yükle
-  setTimeout(() => updateUserInfo(sampleUserInfo), 100);
-
-  // İlk açılış: Me.cs aktif olsun (varsa)
+  // İlk açılış
   openTab("me");
 });
