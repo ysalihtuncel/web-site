@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="style.css">
-    <script src="js/config.js"></script>
-    <script src="js/app.js"></script>
 
 </head>
 <body>
@@ -394,6 +392,11 @@
                     <span>CV Aktif</span>
                 </div>
                 <div class="status-item">
+                  <i class="fas fa-eye"></i>
+                  <span>Toplam Ziyaretçi:</span>
+                  <span id="visitor-count">...</span>
+                </div>
+                <div class="status-item">
                     <i class="fas fa-clock"></i>
                     <span id="current-time">00:00</span>
                 </div>
@@ -401,6 +404,8 @@
         </div>
     </div>
 
-        <script src="js/app.js"></script>
+        <script src="js/config.js" defer></script>
+        <script src="js/app.js" defer></script>
+
 </body>
 </html>

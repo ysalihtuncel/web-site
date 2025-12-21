@@ -1,3 +1,43 @@
+async function fetchCounter(url) {
+  const res = await fetch(url, { cache: "no-store" });
+  const data = await res.json();
+  if (data && typeof data.count === "number") return data.count;
+  throw new Error("Invalid counter response");
+}
+
+async function updateVisitorCounter() {
+  const el = document.getElementById("visitor-count");
+  if (!el) return;
+
+  const NS = "salih-tuncels-team-2230";
+  const NAME = "web-counter";
+
+  const upUrl = `https://api.counterapi.dev/v1/${NS}/${NAME}/up`;
+  const readUrl = `https://api.counterapi.dev/v1/${NS}/${NAME}/`;
+
+  // Bu anahtar aynı cihaz/tarayıcı için kalıcı olur
+  const visitKey = `visited_${NS}_${NAME}_v1`;
+
+  try {
+    // Daha önce sayıldı mı?
+    const alreadyCounted = localStorage.getItem(visitKey) === "1";
+
+    let count;
+    if (!alreadyCounted) {
+      count = await fetchCounter(upUrl);     // +1
+      localStorage.setItem(visitKey, "1");   // işaretle
+    } else {
+      count = await fetchCounter(readUrl);   // sadece oku
+    }
+
+    el.textContent = count;
+  } catch (e) {
+    el.textContent = "-";
+  }
+}
+
+
+
 // Saati güncelle
 function updateTime() {
   const now = new Date();
@@ -671,4 +711,5 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // İlk açılış
   openTab("me");
+  updateVisitorCounter();
 });
